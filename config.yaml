@@ -1,0 +1,58 @@
+# Stock Alert System Configuration
+
+# Monitoring interval in minutes
+check_interval: 60
+
+# WhatsApp Configuration (CallMeBot)
+# To get your API key:
+# 1. Add +34 623 75 84 18 to your contacts as "CallMeBot"
+# 2. Send message "I allow callmebot to send me messages" to CallMeBot on WhatsApp
+# 3. You'll receive your API key
+whatsapp:
+  phone: "+1234567890"  # Your phone with country code (e.g., +1234567890)
+  api_key: "your_api_key_here"  # Your CallMeBot API key
+
+# Alert definitions - Monitor when stocks/ETFs are within 5% of their 150-day moving average
+alerts:
+  - name: "AAPL near 150-day MA"
+    symbol: "AAPL"
+    condition: "near_ma"
+    params:
+      ma_period: 150
+      threshold_percent: 2.0
+    enabled: true
+
+  - name: "NFLX near 150-day MA"
+    symbol: "NFLX"
+    condition: "near_ma"
+    params:
+      ma_period: 150
+      threshold_percent: 2.0
+    enabled: true
+
+  - name: "PLTR near 150-day MA"
+    symbol: "PLTR"
+    condition: "near_ma"
+    params:
+      ma_period: 150
+      threshold_percent: 2.0
+    enabled: true
+
+  - name: "PLTR near 150-day MA"
+    symbol: "PLTR"
+    condition: "near_ma"
+    params:
+      ma_period: 150
+      threshold_percent: 2.0
+    enabled: true
+    
+  - name: "NLR near 150-day MA"
+    symbol: "NLR"  # NLR Nuclear ETF
+    condition: "near_ma"
+    params:
+      ma_period: 150
+      threshold_percent: 2.0
+    enabled: true
+
+# Alert cooldown in minutes (prevent spam)
+alert_cooldown: 30
