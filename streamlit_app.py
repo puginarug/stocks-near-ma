@@ -5,6 +5,7 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime
 import time
+import requests
 
 # Page config
 st.set_page_config(
@@ -25,29 +26,29 @@ def get_sp500_tickers():
         # Popular Market ETFs
         'SPY',   # S&P 500
         'QQQ',   # Nasdaq-100
-        'DIA',   # Dow Jones
-        'IWM',   # Russell 2000
-        'VTI',   # Total Stock Market
-        'VOO',   # Vanguard S&P 500
+        # 'DIA',   # Dow Jones
+        # 'IWM',   # Russell 2000
+        # 'VTI',   # Total Stock Market
+        # 'VOO',   # Vanguard S&P 500
 
-        # Sector ETFs
-        'XLF',   # Financials
-        'XLK',   # Technology
-        'XLE',   # Energy
-        'XLV',   # Healthcare
-        'XLI',   # Industrials
-        'XLY',   # Consumer Discretionary
-        'XLP',   # Consumer Staples
+        # # Sector ETFs
+        # 'XLF',   # Financials
+        # 'XLK',   # Technology
+        # 'XLE',   # Energy
+        # 'XLV',   # Healthcare
+        # 'XLI',   # Industrials
+        # 'XLY',   # Consumer Discretionary
+        # 'XLP',   # Consumer Staples
 
-        # International
-        'VEA',   # Developed Markets
-        'VWO',   # Emerging Markets
-        'EFA',   # EAFE
+        # # International
+        # 'VEA',   # Developed Markets
+        # 'VWO',   # Emerging Markets
+        # 'EFA',   # EAFE
 
-        # Bond ETFs
-        'AGG',   # US Aggregate Bonds
-        'BND',   # Total Bond Market
-        'TLT',   # 20+ Year Treasury
+        # # Bond ETFs
+        # 'AGG',   # US Aggregate Bonds
+        # 'BND',   # Total Bond Market
+        # 'TLT',   # 20+ Year Treasury
 
         # Other
         'GLD',   # Gold
@@ -55,23 +56,41 @@ def get_sp500_tickers():
         'NLR',   # Nuclear Energy (your pick!)
     ]
 
+    # ========================================
+    # ADD YOUR FAVORITE STOCKS HERE!
+    # ========================================
+
+    custom_stocks = [
+        'TSLA',  # Tesla
+        'AAPL',  # Apple
+        'AMZN',  # Amazon
+        'MSFT',  # Microsoft
+        'PLTR',  # Palantir
+        'NFLX',  # Netflix
+        'CEG',   # Constellation Energy
+        'VST',   # Vistra Corporation
+    ]
+
+
     try:
-        # Fetch S&P 500 stocks
+        # Fetch S&P 500 stocks with User-Agent header to avoid 403 error
         url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
-        tables = pd.read_html(url)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        response = requests.get(url, headers=headers)
+        tables = pd.read_html(response.text)
         sp500_table = tables[0]
         tickers = sp500_table['Symbol'].tolist()
         # Clean up tickers
         tickers = [ticker.replace('.', '-') for ticker in tickers]
 
-        # Add custom ETFs to the list
-        all_tickers = tickers + custom_etfs
+        # Add custom ETFs and stocks to the list
+        all_tickers = tickers + custom_etfs + custom_stocks
 
         return all_tickers
     except Exception as e:
         st.error(f"Error fetching S&P 500 list: {e}")
-        # If S&P 500 fetch fails, return just the ETFs
-        return custom_etfs
+        # If S&P 500 fetch fails, return just the ETFs and custom list
+        return custom_etfs + custom_stocks
 
 def get_stock_ma_data(symbol, ma_period=150):
     """
@@ -149,6 +168,14 @@ def main():
 
     # Sidebar controls
     with st.sidebar:
+        st.header("Add Custom Stocks")
+        custom_tickers_input = st.text_input(
+            "Enter ticker symbols (comma-separated)",
+            placeholder="e.g., NVDA, AMD, GOOGL",
+            help="Add your own stocks to monitor. Separate multiple tickers with commas."
+        )
+
+        st.markdown("---")
         st.header("Filters")
         show_near_only = st.checkbox("Show only stocks near MA (±5%)", value=False)
         direction_filter = st.selectbox(
@@ -167,6 +194,16 @@ def main():
     if not tickers:
         st.error("Failed to load tickers")
         return
+
+    # Add user-specified custom tickers from sidebar
+    if custom_tickers_input:
+        user_tickers = [ticker.strip().upper() for ticker in custom_tickers_input.split(',') if ticker.strip()]
+        # Add only unique tickers not already in the list
+        for ticker in user_tickers:
+            if ticker not in tickers:
+                tickers.append(ticker)
+        if user_tickers:
+            st.info(f"➕ Added {len(user_tickers)} custom ticker(s): {', '.join(user_tickers)}")
 
     st.info(f"📊 Loading data for {len(tickers)} stocks & ETFs...")
 
