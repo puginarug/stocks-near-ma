@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock MA Monitor</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Loading stock data...</p>
+        <p id="loadingProgress" class="loading-progress"></p>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>📈 S&P 500 + ETFs - 150-Day MA Monitor</h1>
+            <p class="subtitle">Monitor S&P 500 stocks and popular ETFs - see their distance from 150-day moving average</p>
+        </header>
+
+        <!-- Controls Section -->
+        <section class="controls">
+            <div class="custom-ticker-input">
+                <label for="customTickers">Add Custom Stocks:</label>
+                <input
+                    type="text"
+                    id="customTickers"
+                    placeholder="e.g., NVDA, AMD, GOOGL"
+                    aria-label="Enter ticker symbols (comma-separated)"
+                >
+                <button id="addTickersBtn" class="btn-primary">Add & Refresh</button>
+            </div>
+
+            <div class="filters">
+                <div class="filter-item">
+                    <label>
+                        <input type="checkbox" id="nearMAFilter">
+                        Show only stocks near MA (±5%)
+                    </label>
+                </div>
+                <div class="filter-item">
+                    <label for="directionFilter">Filter by direction:</label>
+                    <select id="directionFilter">
+                        <option value="All">All</option>
+                        <option value="ABOVE">ABOVE</option>
+                        <option value="BELOW">BELOW</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics Cards -->
+        <section class="statistics">
+            <div class="stat-card">
+                <div class="stat-value" id="totalCount">-</div>
+                <div class="stat-label">Total Tickers</div>
+            </div>
+            <div class="stat-card stat-near-ma">
+                <div class="stat-value" id="nearMACount">-</div>
+                <div class="stat-label">Near MA (±5%)</div>
+            </div>
+            <div class="stat-card stat-above">
+                <div class="stat-value" id="aboveCount">-</div>
+                <div class="stat-label">Above MA</div>
+            </div>
+            <div class="stat-card stat-below">
+                <div class="stat-value" id="belowCount">-</div>
+                <div class="stat-label">Below MA</div>
+            </div>
+        </section>
+
+        <!-- Table Section -->
+        <section class="table-section">
+            <div class="table-header">
+                <h2>Stock Data</h2>
+                <div class="table-info">
+                    <span id="displayedCount">Showing 0 stocks</span>
+                    <button id="refreshBtn" class="btn-secondary">🔄 Refresh</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="stockTable" class="stock-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="symbol">Symbol ▼</th>
+                            <th data-sort="price">Price</th>
+                            <th data-sort="ma_150">150-Day MA</th>
+                            <th data-sort="distance_percent">Distance (%)</th>
+                            <th data-sort="direction">Direction</th>
+                            <th data-sort="near_ma">Near MA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Table rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p id="lastUpdate">Last updated: -</p>
+                <p class="legend">
+                    <span class="legend-item">🔔 = Within 5% of 150-day MA</span>
+                    <span class="legend-item">Click column headers to sort</span>
+                    <span class="legend-item">Data refreshes every hour (cached)</span>
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script type="module" src="js/api.js"></script>
+    <script type="module" src="js/filters.js"></script>
+    <script type="module" src="js/table.js"></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
