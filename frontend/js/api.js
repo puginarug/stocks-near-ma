@@ -1,88 +1,82 @@
 /**
  * API Client for Stock MA Monitor
- * Handles all communication with the backend API
+ * Fetches data from JSONBin.io (serverless architecture)
  */
 
-const API_BASE = 'http://localhost:8000/api';
+// CONFIGURATION: Update these values after creating your JSONBin
+const JSONBIN_BIN_ID = '6978c370ae596e708ffa6f81'; // Replace with your JSONBin ID
+const JSONBIN_API_KEY = '$2a$10$PlFK/m9fo0ESQct8jIhgP.I9X7Mnn.oVH2Vo41AZA3lW34897bl6y'; // Replace with your JSONBin API key (optional for read-only)
+
+const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`;
 
 /**
- * Fetch wrapper with error handling and retry logic
+ * Fetch stock data from JSONBin.io
+ * @returns {Promise<Object>} Stock data with metadata
  */
-async function fetchWithRetry(url, options = {}, retries = 3) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const response = await fetch(url, options);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+export async function fetchStocks() {
+    try {
+        const response = await fetch(JSONBIN_URL, {
+            method: 'GET',
+            headers: {
+                'X-Master-Key': JSONBIN_API_KEY
             }
+        });
 
-            return await response.json();
-        } catch (error) {
-            console.error(`Fetch attempt ${i + 1} failed:`, error);
-
-            if (i === retries - 1) {
-                throw error;
-            }
-
-            // Wait before retrying (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const result = await response.json();
+
+        // JSONBin.io returns data in a 'record' property
+        return {
+            stocks: result.record.stocks || [],
+            metadata: result.record.metadata || {},
+            total_count: result.record.metadata?.total_count || 0,
+            processing_time: result.record.metadata?.processing_time || 0,
+            last_updated: result.record.metadata?.last_updated || null,
+            cache_hit: true // Always from cache in this architecture
+        };
+    } catch (error) {
+        console.error('Error fetching stock data:', error);
+        throw error;
     }
 }
 
 /**
- * Fetch all stocks with optional custom tickers
- * @param {string|null} customTickers - Comma-separated custom tickers
- * @returns {Promise<Object>} Stock response data
+ * Get statistics from the fetched data
+ * @param {Array} stocks - Array of stock data
+ * @returns {Object} Statistics
  */
-export async function fetchStocks(customTickers = null) {
-    let url = `${API_BASE}/stocks`;
-
-    if (customTickers) {
-        url += `?include_custom=${encodeURIComponent(customTickers)}`;
-    }
-
-    return await fetchWithRetry(url);
+export function calculateStatistics(stocks) {
+    return {
+        total: stocks.length,
+        nearMA: stocks.filter(s => s.near_ma).length,
+        above: stocks.filter(s => s.direction === 'ABOVE').length,
+        below: stocks.filter(s => s.direction === 'BELOW').length
+    };
 }
 
 /**
- * Fetch S&P 500 ticker list
- * @returns {Promise<Object>} Tickers response
- */
-export async function fetchTickers() {
-    return await fetchWithRetry(`${API_BASE}/sp500-tickers`);
-}
-
-/**
- * Fetch statistics for stocks
- * @param {string|null} tickers - Comma-separated tickers to analyze
- * @returns {Promise<Object>} Statistics response
- */
-export async function fetchStatistics(tickers = null) {
-    let url = `${API_BASE}/statistics`;
-
-    if (tickers) {
-        url += `?tickers=${encodeURIComponent(tickers)}`;
-    }
-
-    return await fetchWithRetry(url);
-}
-
-/**
- * Health check endpoint
+ * Health check (for local testing)
  * @returns {Promise<Object>} Health status
  */
 export async function checkHealth() {
-    return await fetchWithRetry(`${API_BASE}/health`);
-}
-
-/**
- * Clear backend cache
- * @returns {Promise<Object>} Response message
- */
-export async function clearCache() {
-    return await fetchWithRetry(`${API_BASE}/cache/clear`, {
-        method: 'POST'
-    });
+    try {
+        const response = await fetch(JSONBIN_URL, {
+            method: 'HEAD',
+            headers: {
+                'X-Master-Key': JSONBIN_API_KEY
+            }
+        });
+        return {
+            status: response.ok ? 'ok' : 'error',
+            message: response.ok ? 'JSONBin.io is accessible' : 'Cannot reach JSONBin.io'
+        };
+    } catch (error) {
+        return {
+            status: 'error',
+            message: error.message
+        };
+    }
 }

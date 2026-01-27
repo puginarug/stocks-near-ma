@@ -9,15 +9,13 @@ import {
     calculateStatistics,
     updateStatisticsDisplay,
     initFilters,
-    getFilterSettings,
-    parseCustomTickers
+    getFilterSettings
 } from './filters.js';
 
 // Application state
 let state = {
     allStocks: [],
-    filteredStocks: [],
-    customTickers: null
+    filteredStocks: []
 };
 
 /**
@@ -45,31 +43,37 @@ async function init() {
  */
 async function loadData() {
     try {
-        showLoading('Loading stock data...');
+        showLoading('Loading stock data from JSONBin.io...');
 
-        const response = await fetchStocks(state.customTickers);
+        const response = await fetchStocks();
 
         state.allStocks = response.stocks;
         state.filteredStocks = applyFilters(state.allStocks, getFilterSettings());
 
         updateUI();
 
-        // Update last update time
-        const now = new Date();
-        document.getElementById('lastUpdate').textContent =
-            `Last updated: ${now.toLocaleString()}`;
+        // Update last update time from metadata or use current time
+        if (response.last_updated) {
+            const lastUpdate = new Date(response.last_updated);
+            document.getElementById('lastUpdate').textContent =
+                `Last updated: ${lastUpdate.toLocaleString()}`;
+        } else {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent =
+                `Last updated: ${now.toLocaleString()}`;
+        }
 
-        // Show processing time if available
+        // Show processing info if available
         if (response.processing_time) {
-            console.log(`Data loaded in ${response.processing_time}s (Cache hit: ${response.cache_hit})`);
+            console.log(`Data processed in ${response.processing_time}s via GitHub Actions`);
             showLoadingProgress(
-                `Loaded ${response.total_count} stocks in ${response.processing_time}s ${response.cache_hit ? '(cached)' : '(parallel processing)'}`
+                `Loaded ${response.total_count} stocks (processed in ${response.processing_time}s)`
             );
         }
 
     } catch (error) {
         console.error('Error loading data:', error);
-        alert('Failed to load stock data. Please check if the backend server is running on http://localhost:8000');
+        alert('Failed to load stock data from JSONBin.io. Please check your API configuration in api.js');
         hideLoading();
     }
 }
@@ -105,27 +109,6 @@ function initButtons() {
     // Refresh button
     document.getElementById('refreshBtn').addEventListener('click', async () => {
         await loadData();
-    });
-
-    // Add custom tickers button
-    document.getElementById('addTickersBtn').addEventListener('click', async () => {
-        const input = document.getElementById('customTickers').value;
-        const customTickers = parseCustomTickers(input);
-
-        if (customTickers) {
-            state.customTickers = customTickers;
-            console.log('Adding custom tickers:', customTickers);
-            await loadData();
-        } else {
-            alert('Please enter valid ticker symbols (comma-separated)');
-        }
-    });
-
-    // Allow Enter key in custom tickers input
-    document.getElementById('customTickers').addEventListener('keypress', async (e) => {
-        if (e.key === 'Enter') {
-            document.getElementById('addTickersBtn').click();
-        }
     });
 }
 

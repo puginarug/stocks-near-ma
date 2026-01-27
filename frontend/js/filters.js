@@ -11,6 +11,11 @@
 export function applyFilters(stocks, filters) {
     let filtered = [...stocks];
 
+    // Apply search filter
+    if (filters.search) {
+        filtered = searchStocks(filtered, filters.search);
+    }
+
     // Apply near MA filter
     if (filters.nearMA) {
         filtered = filterNearMA(filtered);
@@ -47,6 +52,23 @@ export function filterDirection(stocks, direction) {
 }
 
 /**
+ * Search stocks by symbol
+ * @param {Array} stocks - Array of stock data
+ * @param {string} query - Search query
+ * @returns {Array} Filtered stocks matching the search
+ */
+export function searchStocks(stocks, query) {
+    if (!query || !query.trim()) {
+        return stocks;
+    }
+
+    const searchTerm = query.trim().toUpperCase();
+    return stocks.filter(stock =>
+        stock.symbol.toUpperCase().includes(searchTerm)
+    );
+}
+
+/**
  * Calculate statistics from stock data
  * @param {Array} stocks - Array of stock data
  * @returns {Object} Statistics object
@@ -78,19 +100,38 @@ export function updateStatisticsDisplay(stats) {
 export function initFilters(onFilterChange) {
     const nearMAFilter = document.getElementById('nearMAFilter');
     const directionFilter = document.getElementById('directionFilter');
+    const searchInput = document.getElementById('searchStock');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
 
     nearMAFilter.addEventListener('change', () => {
-        onFilterChange({
-            nearMA: nearMAFilter.checked,
-            direction: directionFilter.value
-        });
+        onFilterChange(getFilterSettings());
     });
 
     directionFilter.addEventListener('change', () => {
-        onFilterChange({
-            nearMA: nearMAFilter.checked,
-            direction: directionFilter.value
-        });
+        onFilterChange(getFilterSettings());
+    });
+
+    // Search input with debouncing for better performance
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            onFilterChange(getFilterSettings());
+        }, 300); // 300ms debounce
+    });
+
+    // Clear search button
+    clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        onFilterChange(getFilterSettings());
+    });
+
+    // Allow Enter key to trigger search immediately
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            clearTimeout(searchTimeout);
+            onFilterChange(getFilterSettings());
+        }
     });
 }
 
@@ -99,7 +140,9 @@ export function initFilters(onFilterChange) {
  * @returns {Object} Current filter settings
  */
 export function getFilterSettings() {
+    const searchInput = document.getElementById('searchStock');
     return {
+        search: searchInput ? searchInput.value : '',
         nearMA: document.getElementById('nearMAFilter').checked,
         direction: document.getElementById('directionFilter').value
     };

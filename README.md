@@ -1,28 +1,42 @@
 # Stock MA Monitor
 
-A modern web application for monitoring S&P 500 stocks and ETFs, calculating their distance from the 150-day moving average with **7.5x faster parallel processing**.
+A serverless web application for monitoring S&P 500 stocks and ETFs, calculating their distance from the 150-day moving average. Deployed on GitHub Pages with automated data updates via GitHub Actions.
 
 ## Features
 
-- ⚡ **Parallel Processing**: Loads 500 stocks in ~35 seconds using 10 concurrent workers
+- 🚀 **Fully Serverless**: No backend required - runs entirely on GitHub Pages
+- ⚡ **Parallel Processing**: Processes 500+ stocks in ~35 seconds using 10 concurrent workers
+- 🔄 **Auto-Updates**: Stock data refreshes every 4 hours via GitHub Actions
+- 🔍 **Stock Search**: Quickly find specific stocks (e.g., AAPL, TSLA, SPY)
 - 📊 **Real-time Statistics**: Total stocks, near MA count, above/below MA counts
 - 🎯 **Advanced Filtering**: Filter by proximity to MA (±5%) and direction (ABOVE/BELOW)
 - 📈 **Sortable Table**: Click column headers to sort by any metric
-- ➕ **Custom Tickers**: Add your own stocks via the UI
 - 🎨 **Color Coding**: Red (above MA), Green (below MA), Yellow (near MA)
-- 💾 **Smart Caching**: 1-hour cache to minimize API calls
 - 📱 **Responsive Design**: Works on desktop and mobile
+- 💰 **100% Free**: GitHub Pages + JSONBin.io free tiers
 
 ## Quick Start
 
-### Prerequisites
+### For Users (View Live Demo)
 
-- Python 3.10+ (tested with Python 3.14)
-- Anaconda/Miniconda (optional but recommended)
+Simply visit the GitHub Pages URL (if deployed):
+```
+https://<your-username>.github.io/stocks-near-ma/
+```
 
-### Installation
+Stock data updates automatically every 4 hours during market hours (Mon-Fri).
 
-**1. Start the Backend (FastAPI)**
+### For Developers (Local Development)
+
+**Option 1: Use Deployed Data (Simplest)**
+
+1. Configure `frontend/js/api.js` with your JSONBin.io credentials
+2. Open `frontend/index.html` in your browser
+3. Done! No backend server needed.
+
+**Option 2: Run with Local Backend (For Development)**
+
+If you want to test the backend locally or make changes to the data processing:
 
 ```bash
 # Navigate to backend folder
@@ -35,42 +49,33 @@ pip install -r requirements.txt
 python app.py
 ```
 
-The backend will start on `http://localhost:8000`
+Then open `frontend/index.html` in your browser.
 
-**2. Open the Frontend**
+### Deploy Your Own
 
-Option A - Direct (simplest):
-- Open `frontend/index.html` in your browser
-
-Option B - Local server (recommended):
-```bash
-# In a new terminal, navigate to frontend
-cd frontend
-
-# Serve with Python
-python -m http.server 3000
-```
-Then visit `http://localhost:3000`
-
-**3. Explore the API**
-
-Visit `http://localhost:8000/docs` for interactive API documentation (Swagger UI)
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete deployment instructions using GitHub Pages + JSONBin.io.
 
 ## How It Works
 
-### Architecture
+### Serverless Architecture
 
-**Backend** (Python/FastAPI):
+```
+GitHub Actions (Scheduled) → Python Script (Parallel Processing) → JSONBin.io (Storage)
+                                                                           ↓
+                                                          GitHub Pages ← Fetch Data
+```
+
+**Data Pipeline** (GitHub Actions):
+- Runs every 4 hours during market hours (Mon-Fri, 9 AM - 4 PM ET)
 - Fetches stock data from Yahoo Finance using `yfinance`
 - Processes 10 stocks concurrently with ThreadPoolExecutor
 - Calculates 150-day moving averages in parallel
-- Caches results for 1 hour
-- Exposes REST API endpoints
+- Uploads results to JSONBin.io (~35 seconds total)
 
-**Frontend** (HTML/CSS/JavaScript):
+**Frontend** (GitHub Pages):
 - Pure vanilla JavaScript (no frameworks)
-- Fetches data from backend API
-- Client-side filtering and sorting
+- Fetches pre-processed data from JSONBin.io
+- Client-side filtering, sorting, and search
 - Responsive table with color coding
 - Real-time statistics calculation
 
@@ -79,14 +84,22 @@ Visit `http://localhost:8000/docs` for interactive API documentation (Swagger UI
 - **Sequential Processing**: ~260 seconds for 500 stocks
 - **Parallel Processing (10 workers)**: ~35 seconds for 500 stocks
 - **Speedup**: 7.5x faster! 🚀
+- **Deployment**: 100% serverless, 100% free
 
 ## Project Structure
 
 ```
 stocks-near-ma/
-├── backend/                # FastAPI backend
-│   ├── app.py             # Main FastAPI application
-│   ├── requirements.txt   # Backend dependencies
+├── .github/
+│   └── workflows/
+│       └── update-stocks.yml     # GitHub Actions workflow (runs every 4 hours)
+│
+├── scripts/
+│   └── fetch_stocks.py           # Data fetcher with parallel processing
+│
+├── backend/                      # FastAPI backend (optional for local dev)
+│   ├── app.py                    # Main FastAPI application
+│   ├── requirements.txt          # Backend dependencies
 │   ├── models/
 │   │   └── stock_models.py       # Pydantic data models
 │   ├── services/
@@ -96,18 +109,53 @@ stocks-near-ma/
 │       ├── cache.py              # In-memory caching
 │       └── sp500_fetcher.py      # S&P 500 list fetcher
 │
-└── frontend/              # HTML/CSS/JS frontend
-    ├── index.html        # Main HTML page
-    ├── css/
-    │   └── styles.css    # Styling
-    └── js/
-        ├── app.js        # Main application logic
-        ├── api.js        # API client
-        ├── table.js      # Table rendering
-        └── filters.js    # Filter logic
+├── frontend/                     # HTML/CSS/JS frontend (deployed to GitHub Pages)
+│   ├── index.html               # Main HTML page
+│   ├── css/
+│   │   └── styles.css           # Styling
+│   └── js/
+│       ├── app.js               # Main application logic
+│       ├── api.js               # API client (fetches from JSONBin.io)
+│       ├── table.js             # Table rendering
+│       └── filters.js           # Filter & search logic
+│
+├── DEPLOYMENT.md                 # Detailed deployment guide
+└── README.md                     # This file
 ```
 
-## API Endpoints
+## Data & APIs
+
+### JSONBin.io Storage
+
+Stock data is stored in JSONBin.io with the following structure:
+```json
+{
+  "stocks": [
+    {
+      "symbol": "AAPL",
+      "price": 178.25,
+      "ma_150": 175.50,
+      "distance_percent": 1.57,
+      "distance_abs": 1.57,
+      "direction": "ABOVE",
+      "near_ma": true
+    }
+  ],
+  "metadata": {
+    "total_count": 520,
+    "near_ma_count": 42,
+    "above_count": 310,
+    "below_count": 210,
+    "processing_time": 35.2,
+    "last_updated": "2026-01-26T14:30:00Z",
+    "version": "1.0.0"
+  }
+}
+```
+
+### Local Backend API (Optional)
+
+If running the FastAPI backend locally:
 
 - `GET /api/stocks?include_custom=NVDA,AMD` - Fetch all stock data with parallel processing
 - `GET /api/sp500-tickers` - Get S&P 500 ticker list
@@ -118,47 +166,19 @@ stocks-near-ma/
 
 ## Usage
 
-### Running in Anaconda
+### Search for Stocks
 
-If you're using Anaconda/Miniconda:
+Use the search bar to find specific stocks:
+- Type partial symbols (e.g., "AA" finds AAPL, AAL, etc.)
+- Or exact symbols (e.g., "TSLA", "SPY", "NVDA")
+- Click "Clear" to reset search
 
-```bash
-# Create a new environment (optional)
-conda create -n stocks-backend python=3.14
-conda activate stocks-backend
-
-# Navigate to backend
-cd backend
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the server
-python app.py
-```
-
-### Adding Custom Stocks
-
-**Via UI:**
-1. Enter ticker symbols in the "Add Custom Stocks" input (e.g., `NVDA, AMD, GOOGL`)
-2. Click "Add & Refresh"
-3. The app will fetch and display your custom stocks
-
-**Via Code:**
-Edit `backend/utils/sp500_fetcher.py` to permanently add stocks:
-```python
-custom_stocks = [
-    'TSLA',  # Tesla
-    'NVDA',  # NVIDIA
-    # Add more here...
-]
-```
-
-### Using Filters
+### Apply Filters
 
 - **Near MA Filter**: Check "Show only stocks near MA" to see stocks within ±5% of their 150-day MA
 - **Direction Filter**: Select "ABOVE" or "BELOW" to filter by direction
-- **Sorting**: Click any column header to sort by that metric
+- **Sorting**: Click any column header to sort by any metric
+- **Combine Filters**: Use search + filters together for precise results
 
 ### Color Coding
 
@@ -166,55 +186,114 @@ custom_stocks = [
 - 🟢 **Green**: Stock is trading BELOW its 150-day MA
 - 🟡 **Yellow highlight**: Stock is within ±5% of its MA (🔔 indicator)
 
+### Adding More Stocks
+
+To include additional stocks in the dataset:
+
+1. Edit `scripts/fetch_stocks.py`
+2. Add tickers to `custom_stocks` list:
+```python
+custom_stocks = [
+    'TSLA', 'AAPL', 'NVDA', 'AMD',
+    'YOUR_TICKER_HERE',  # Add your stocks
+]
+```
+3. Commit and push to GitHub
+4. Next scheduled run (or manual trigger) will include them
+
 ## Troubleshooting
 
-### Port Already in Use
+### Frontend Shows "Failed to load stock data"
 
-If you see "port 8000 already in use":
+**Check:**
+1. Verify `frontend/js/api.js` has correct JSONBin credentials
+2. Check JSONBin.io dashboard - does your bin have data?
+3. Open browser console (F12) - any error messages?
+4. Try refreshing the page
+
+### Data Seems Outdated
+
+**Check:**
+1. Look at "Last updated" timestamp on the page
+2. Go to GitHub → Actions tab → Check recent workflow runs
+3. If workflow failed, check logs for errors
+4. Manually trigger workflow: Actions → "Update Stock Data" → "Run workflow"
+
+### GitHub Actions Failing
+
+**Common causes:**
+1. GitHub Secrets not set correctly (check JSONBIN_API_KEY and JSONBIN_BIN_ID)
+2. JSONBin.io API rate limit (unlikely - free tier is 10k/month, we use ~120/month)
+3. Network timeout (retry usually fixes it)
+
+**To debug:**
+1. Go to Actions tab → Click failed run
+2. Expand failed step to see error logs
+3. Check "stock-data-summary" artifact (if available)
+
+### Local Backend Issues
+
+If running backend locally and seeing errors:
+
+**Port Already in Use:**
 ```bash
-# Find the process using port 8000
+# Windows - Find and kill process
 netstat -ano | findstr :8000
-
-# Kill the process (replace PID with the number shown)
 taskkill /PID <PID> /F
-```
 
-Or just use a different port:
-```bash
+# Use different port
 python app.py --port 8001
 ```
-(Then update `frontend/js/api.js` to use the new port)
 
-### Failed to Load Stock Data
-
-1. Make sure the backend is running on `http://localhost:8000`
-2. Check backend terminal for errors
-3. Visit `http://localhost:8000/api/health` to verify the backend is responding
-
-### Slow Data Loading
-
-- First load takes ~35 seconds to fetch 500+ stocks
-- Subsequent loads are instant (cached for 1 hour)
-- If still slow, check your internet connection
+**Failed to Install Dependencies:**
+- Ensure Python 3.10+ (tested with 3.14)
+- Try: `pip install --upgrade pip`
+- Then: `pip install -r requirements.txt`
 
 ## Development
 
-### Backend Development
+### Testing Locally
 
-The backend uses FastAPI with auto-reload:
+**Frontend Development:**
+- Edit files in `frontend/`
+- Open `index.html` in browser or use local server:
+  ```bash
+  cd frontend
+  python -m http.server 3000
+  ```
+- Refresh browser to see changes - no build step required!
+
+**Backend Development (Optional):**
 ```bash
 cd backend
 uvicorn app:app --reload --port 8000
 ```
+Code changes automatically restart the server.
 
-Any code changes will automatically restart the server.
+**Testing Data Pipeline:**
+```bash
+# Set environment variables
+export JSONBIN_API_KEY=your_key
+export JSONBIN_BIN_ID=your_bin_id
 
-### Frontend Development
+# Run data fetcher
+python scripts/fetch_stocks.py
+```
 
-The frontend is pure HTML/CSS/JavaScript:
-- Edit files in `frontend/`
-- Refresh browser to see changes
-- No build step required!
+### Modifying Stock List
+
+Edit `scripts/fetch_stocks.py` to change included stocks:
+```python
+custom_etfs = [
+    'SPY', 'QQQ', 'DIA',  # Major indexes
+    # Add your ETFs
+]
+
+custom_stocks = [
+    'TSLA', 'AAPL', 'NVDA',
+    # Add your stocks
+]
+```
 
 ### Running Tests
 
@@ -225,26 +304,37 @@ python -m pytest tests/
 
 ## Deployment
 
-### Backend Deployment
+### Serverless Deployment (Recommended)
 
-Deploy to any Python-supporting platform:
-- **Heroku**: Use `Procfile` with `web: uvicorn app:app --host=0.0.0.0 --port=$PORT`
-- **Railway**: Auto-detects FastAPI apps
-- **Render**: Use `uvicorn app:app --host 0.0.0.0 --port $PORT`
-- **AWS Lambda**: Use Mangum adapter for serverless
+**See [DEPLOYMENT.md](DEPLOYMENT.md) for complete step-by-step instructions.**
 
-### Frontend Deployment
+Quick overview:
+1. Create JSONBin.io account (free)
+2. Add GitHub Secrets (JSONBIN_API_KEY, JSONBIN_BIN_ID)
+3. Update `frontend/js/api.js` with your credentials
+4. Enable GitHub Pages
+5. Done! Data auto-updates every 4 hours
 
-Deploy as static files to:
-- **Netlify**: Drag & drop the `frontend/` folder
-- **Vercel**: Connect GitHub repo
-- **GitHub Pages**: Enable Pages in repo settings
-- **AWS S3**: Upload to S3 bucket with static hosting
+**Benefits:**
+- 100% free (GitHub Pages + JSONBin.io free tiers)
+- No server maintenance
+- Automatic updates via GitHub Actions
+- Global CDN distribution
 
-**Important**: Update `frontend/js/api.js` with your deployed backend URL:
-```javascript
-const API_BASE = 'https://your-backend-url.com/api';
-```
+### Alternative: Traditional Backend Deployment
+
+If you prefer to run the FastAPI backend continuously:
+
+**Backend:**
+- **Railway**: Auto-detects FastAPI apps (easiest)
+- **Render**: Free tier available
+- **Heroku**: `web: uvicorn app:app --host=0.0.0.0 --port=$PORT`
+- **AWS Lambda**: Use Mangum adapter
+
+**Frontend:**
+- **Netlify/Vercel**: Drag & drop `frontend/` folder
+- **GitHub Pages**: Enable in repo settings
+- Update `frontend/js/api.js` with backend URL
 
 ## Contributing
 
@@ -259,8 +349,20 @@ Contributions are welcome! Please:
 
 MIT License - feel free to modify and use as needed.
 
+## Tech Stack
+
+- **Frontend:** Vanilla JavaScript (ES6 modules), HTML5, CSS3
+- **Data Processing:** Python 3.10+, yfinance, pandas
+- **Automation:** GitHub Actions
+- **Storage:** JSONBin.io (free JSON storage)
+- **Hosting:** GitHub Pages (free static hosting)
+- **Backend (Optional):** FastAPI, uvicorn
+- **Parallel Processing:** ThreadPoolExecutor (10 concurrent workers)
+
 ## Acknowledgments
 
 - Stock data provided by [Yahoo Finance](https://finance.yahoo.com) via `yfinance`
 - S&P 500 list from [Wikipedia](https://en.wikipedia.org/wiki/List_of_S%26P_500_companies)
+- Free hosting by [GitHub Pages](https://pages.github.com/)
+- Free JSON storage by [JSONBin.io](https://jsonbin.io)
 - Built with [FastAPI](https://fastapi.tiangolo.com/), vanilla JavaScript, and ❤️
