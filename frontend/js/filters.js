@@ -18,7 +18,7 @@ export function applyFilters(stocks, filters) {
 
     // Apply near MA filter
     if (filters.nearMA) {
-        filtered = filterNearMA(filtered);
+        filtered = filterNearMA(filtered, filters.threshold || 5);
     }
 
     // Apply direction filter
@@ -30,12 +30,13 @@ export function applyFilters(stocks, filters) {
 }
 
 /**
- * Filter stocks that are near MA (±5%)
+ * Filter stocks that are near MA based on threshold
  * @param {Array} stocks - Array of stock data
+ * @param {number} threshold - Percentage threshold (default 5)
  * @returns {Array} Filtered stocks
  */
-export function filterNearMA(stocks) {
-    return stocks.filter(stock => stock.near_ma === true);
+export function filterNearMA(stocks, threshold = 5) {
+    return stocks.filter(stock => stock.distance_abs <= threshold);
 }
 
 /**
@@ -71,12 +72,13 @@ export function searchStocks(stocks, query) {
 /**
  * Calculate statistics from stock data
  * @param {Array} stocks - Array of stock data
+ * @param {number} threshold - MA threshold percentage
  * @returns {Object} Statistics object
  */
-export function calculateStatistics(stocks) {
+export function calculateStatistics(stocks, threshold = 5) {
     return {
         total: stocks.length,
-        nearMA: stocks.filter(s => s.near_ma).length,
+        nearMA: stocks.filter(s => s.distance_abs <= threshold).length,
         above: stocks.filter(s => s.direction === 'ABOVE').length,
         below: stocks.filter(s => s.direction === 'BELOW').length
     };
@@ -102,6 +104,17 @@ export function initFilters(onFilterChange) {
     const directionFilter = document.getElementById('directionFilter');
     const searchInput = document.getElementById('searchStock');
     const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const thresholdSlider = document.getElementById('maThreshold');
+    const thresholdValueSpan = document.getElementById('thresholdValue');
+    const statThresholdValueSpan = document.getElementById('statThresholdValue');
+
+    // Threshold slider
+    thresholdSlider.addEventListener('input', () => {
+        const value = thresholdSlider.value;
+        thresholdValueSpan.textContent = value;
+        statThresholdValueSpan.textContent = value;
+        onFilterChange(getFilterSettings());
+    });
 
     nearMAFilter.addEventListener('change', () => {
         onFilterChange(getFilterSettings());
@@ -141,10 +154,12 @@ export function initFilters(onFilterChange) {
  */
 export function getFilterSettings() {
     const searchInput = document.getElementById('searchStock');
+    const thresholdSlider = document.getElementById('maThreshold');
     return {
         search: searchInput ? searchInput.value : '',
         nearMA: document.getElementById('nearMAFilter').checked,
-        direction: document.getElementById('directionFilter').value
+        direction: document.getElementById('directionFilter').value,
+        threshold: parseFloat(thresholdSlider.value) || 5
     };
 }
 

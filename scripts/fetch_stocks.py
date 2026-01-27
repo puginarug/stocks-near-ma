@@ -64,8 +64,12 @@ def get_sp500_tickers() -> List[str]:
         # Fetch S&P 500 stocks
         url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-        response = requests.get(url, headers=headers)
-        tables = pd.read_html(response.text)
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+
+        # Use StringIO to avoid file path issues
+        from io import StringIO
+        tables = pd.read_html(StringIO(response.text))
         sp500_table = tables[0]
         tickers = sp500_table['Symbol'].tolist()
 
@@ -77,7 +81,8 @@ def get_sp500_tickers() -> List[str]:
         print(f"Fetched {len(all_tickers)} unique tickers")
         return all_tickers
     except Exception as e:
-        print(f"Error fetching S&P 500 list: {e}")
+        print(f"Error fetching S&P 500 list: {type(e).__name__}")
+        print(f"Falling back to custom ETFs and stocks only ({len(custom_etfs + custom_stocks)} tickers)")
         return custom_etfs + custom_stocks
 
 

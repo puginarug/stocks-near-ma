@@ -20,6 +20,7 @@
         <header class="header">
             <h1>📈 S&P 500 + ETFs - 150-Day MA Monitor</h1>
             <p class="subtitle">Monitor S&P 500 stocks and popular ETFs - see their distance from 150-day moving average</p>
+            <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">🌙 Dark Mode</button>
         </header>
 
         <!-- Controls Section -->
@@ -36,10 +37,22 @@
             </div>
 
             <div class="filters">
+                <div class="filter-item slider-container">
+                    <label for="maThreshold">Near MA Threshold: ±<span id="thresholdValue">5</span>%</label>
+                    <input
+                        type="range"
+                        id="maThreshold"
+                        min="1"
+                        max="15"
+                        value="5"
+                        step="0.5"
+                        aria-label="Set MA threshold percentage"
+                    >
+                </div>
                 <div class="filter-item">
                     <label>
                         <input type="checkbox" id="nearMAFilter">
-                        Show only stocks near MA (±5%)
+                        Show only stocks near MA
                     </label>
                 </div>
                 <div class="filter-item">
@@ -61,7 +74,7 @@
             </div>
             <div class="stat-card stat-near-ma">
                 <div class="stat-value" id="nearMACount">-</div>
-                <div class="stat-label">Near MA (±5%)</div>
+                <div class="stat-label">Near MA (±<span id="statThresholdValue">5</span>%)</div>
             </div>
             <div class="stat-card stat-above">
                 <div class="stat-value" id="aboveCount">-</div>
@@ -107,9 +120,9 @@
             <div class="footer-content">
                 <p id="lastUpdate">Last updated: -</p>
                 <p class="legend">
-                    <span class="legend-item">🔔 = Within 5% of 150-day MA</span>
+                    <span class="legend-item">🔔 = Within threshold of 150-day MA</span>
                     <span class="legend-item">Click column headers to sort</span>
-                    <span class="legend-item">Data refreshes every hour (cached)</span>
+                    <span class="legend-item">Data updates every 4 hours via GitHub Actions</span>
                 </p>
             </div>
         </footer>

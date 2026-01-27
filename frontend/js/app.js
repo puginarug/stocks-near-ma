@@ -28,6 +28,7 @@ async function init() {
     initTableSorting();
     initFilters(handleFilterChange);
     initButtons();
+    initThemeToggle();
 
     // Load initial data
     await loadData();
@@ -82,14 +83,16 @@ async function loadData() {
  * Update UI with current state
  */
 function updateUI() {
+    const filterSettings = getFilterSettings();
+
     // Apply filters
-    state.filteredStocks = applyFilters(state.allStocks, getFilterSettings());
+    state.filteredStocks = applyFilters(state.allStocks, filterSettings);
 
     // Render table
     renderTable(state.filteredStocks);
 
-    // Update statistics (use all stocks for stats, not filtered)
-    const stats = calculateStatistics(state.allStocks);
+    // Update statistics (use all stocks for stats with current threshold)
+    const stats = calculateStatistics(state.allStocks, filterSettings.threshold);
     updateStatisticsDisplay(stats);
 }
 
@@ -109,6 +112,36 @@ function initButtons() {
     // Refresh button
     document.getElementById('refreshBtn').addEventListener('click', async () => {
         await loadData();
+    });
+}
+
+/**
+ * Initialize theme toggle
+ */
+function initThemeToggle() {
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+
+    // Check for saved theme preference or default to dark
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || !savedTheme) {
+        body.classList.add('dark-theme');
+        themeToggle.textContent = '☀️ Light Mode';
+    } else {
+        themeToggle.textContent = '🌙 Dark Mode';
+    }
+
+    // Toggle theme on click
+    themeToggle.addEventListener('click', () => {
+        body.classList.toggle('dark-theme');
+
+        if (body.classList.contains('dark-theme')) {
+            themeToggle.textContent = '☀️ Light Mode';
+            localStorage.setItem('theme', 'dark');
+        } else {
+            themeToggle.textContent = '🌙 Dark Mode';
+            localStorage.setItem('theme', 'light');
+        }
     });
 }
 
