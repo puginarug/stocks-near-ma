@@ -8,8 +8,9 @@ let currentSortDirection = 'asc';
 /**
  * Render stock data table
  * @param {Array} stocks - Array of stock data objects
+ * @param {number} threshold - Current MA threshold for highlighting
  */
-export function renderTable(stocks) {
+export function renderTable(stocks, threshold = 5) {
     const tableBody = document.getElementById('tableBody');
 
     if (!stocks || stocks.length === 0) {
@@ -24,7 +25,7 @@ export function renderTable(stocks) {
     const fragment = document.createDocumentFragment();
 
     sortedStocks.forEach(stock => {
-        const row = createTableRow(stock);
+        const row = createTableRow(stock, threshold);
         fragment.appendChild(row);
     });
 
@@ -38,13 +39,15 @@ export function renderTable(stocks) {
 /**
  * Create a table row for a stock
  * @param {Object} stock - Stock data object
+ * @param {number} threshold - Current MA threshold for highlighting
  * @returns {HTMLElement} Table row element
  */
-function createTableRow(stock) {
+function createTableRow(stock, threshold = 5) {
     const row = document.createElement('tr');
 
-    // Highlight row if near MA
-    if (stock.near_ma) {
+    // Highlight row if near MA (using dynamic threshold)
+    const isNearMA = stock.distance_abs <= threshold;
+    if (isNearMA) {
         row.classList.add('near-ma-highlight');
     }
 
@@ -76,9 +79,9 @@ function createTableRow(stock) {
     );
     row.appendChild(directionCell);
 
-    // Near MA indicator
+    // Near MA indicator (using dynamic threshold)
     const nearMACell = document.createElement('td');
-    nearMACell.textContent = stock.near_ma ? '🔔' : '';
+    nearMACell.textContent = isNearMA ? '🔔' : '';
     row.appendChild(nearMACell);
 
     return row;

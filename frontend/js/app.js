@@ -88,8 +88,8 @@ function updateUI() {
     // Apply filters
     state.filteredStocks = applyFilters(state.allStocks, filterSettings);
 
-    // Render table
-    renderTable(state.filteredStocks);
+    // Render table with current threshold for highlighting
+    renderTable(state.filteredStocks, filterSettings.threshold);
 
     // Update statistics (use all stocks for stats with current threshold)
     const stats = calculateStatistics(state.allStocks, filterSettings.threshold);
@@ -124,11 +124,16 @@ function initThemeToggle() {
 
     // Check for saved theme preference or default to dark
     const savedTheme = localStorage.getItem('theme');
+    console.log('Saved theme:', savedTheme);
+
     if (savedTheme === 'dark' || !savedTheme) {
         body.classList.add('dark-theme');
         themeToggle.textContent = '☀️ Light Mode';
+        console.log('Applied dark theme');
     } else {
+        body.classList.remove('dark-theme');
         themeToggle.textContent = '🌙 Dark Mode';
+        console.log('Applied light theme');
     }
 
     // Toggle theme on click
@@ -138,9 +143,11 @@ function initThemeToggle() {
         if (body.classList.contains('dark-theme')) {
             themeToggle.textContent = '☀️ Light Mode';
             localStorage.setItem('theme', 'dark');
+            console.log('Switched to dark theme');
         } else {
             themeToggle.textContent = '🌙 Dark Mode';
             localStorage.setItem('theme', 'light');
+            console.log('Switched to light theme');
         }
     });
 }
