@@ -167,12 +167,31 @@ def upload_to_jsonbin(data: dict, api_key: str, bin_id: str):
     }
 
     try:
-        response = requests.put(url, json=data, headers=headers)
+        # Calculate payload size
+        payload_str = json.dumps(data)
+        payload_size = len(payload_str.encode('utf-8'))
+        print(f"Payload size: {payload_size / 1024:.2f} KB ({len(data['stocks'])} stocks)")
+
+        response = requests.put(url, json=data, headers=headers, timeout=30)
+        print(f"Response status: {response.status_code}")
+        print(f"Response body: {response.text[:500]}")
         response.raise_for_status()
+
+        # Verify upload by checking what's in the bin
+        verify_url = f"https://api.jsonbin.io/v3/b/{bin_id}/latest"
+        verify_response = requests.get(verify_url, headers={'X-Master-Key': api_key})
+        verify_data = verify_response.json()
+        actual_count = len(verify_data.get('record', {}).get('stocks', []))
+        print(f"Verification: JSONBin now has {actual_count} stocks")
+
+        if actual_count != len(data['stocks']):
+            print(f"WARNING: Expected {len(data['stocks'])} stocks but JSONBin has {actual_count}")
+            return False
+
         print(f"Successfully uploaded to JSONBin.io: {response.status_code}")
         return True
     except Exception as e:
-        print(f"Error uploading to JSONBin.io: {e}")
+        print(f"Error uploading to JSONBin.io: {type(e).__name__}: {e}")
         return False
 
 
